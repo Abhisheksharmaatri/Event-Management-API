@@ -9,11 +9,10 @@ const nodemailer = require('nodemailer');
 
 
 //Sensitive data
-const SensitiveData = require('../sensitive');
+const sensitive = require('../sensitive');
 
 //model
 const User = require('../models/user');
-const sensitive = require('../sensitive');
 
 // /user/signup => POST
 exports.signup = async ({
@@ -30,7 +29,6 @@ exports.signup = async ({
             }
         });
     } catch (err) {
-        console.log(err);
         err.statusCode = 500;
         err.message = 'Internal Server Error';
         return err;
@@ -63,7 +61,10 @@ exports.signup = async ({
         err.message = 'Internal Server Error';
         return err;
     }
-    return user;
+    return {
+        message: 'User created successfully',
+        statusCode: 201
+    };
 };
 
 //Verification Email
@@ -117,7 +118,8 @@ exports.login = async ({
     }
     const token = jwt.sign({
         email: user.email,
-        userId: user.id
+        userId: user.id,
+        type: 'user'
     }, sensitive.jwtSecret, {
         expiresIn: '1h'
     });
@@ -172,8 +174,12 @@ exports.updateUser = async ({
         error.statusCode = 422;
         return error;
     }
-    user.name = name;
-    user.admissionNumber = admissionNumber;
+    if (name) {
+        user.name = name;
+    }
+    if (admissionNumber) {
+        user.admissionNumber = admissionNumber;
+    }
     try {
         await user.save();
     } catch (err) {
